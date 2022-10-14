@@ -14,10 +14,12 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.core.SnapshotHolder
+import com.google.firebase.storage.FirebaseStorage
 import com.myminiblog.databinding.FragmentHomeBinding
 import com.myminiblog.databinding.ItemSnapshotBinding
 
@@ -110,17 +112,30 @@ class HomeFragment : Fragment() {
         mFirebaseAdapter.stopListening()
     }
 
+    //eliminar imagen
+    private fun deleteSnapshot(snapshot: Snapshot) {
+        val databaseReference = FirebaseDatabase.getInstance().reference.child("snapshots")
+        databaseReference.child(snapshot.id).removeValue()
+    }
+
+    //evento de likes
+    private fun setLike(snapshot: Snapshot, checked: Boolean) {
+
+    }
+
+
+
     inner class SnapshotHolder(view: View) : RecyclerView.ViewHolder(view) {
         val binding = ItemSnapshotBinding.bind(view)
 
         fun setListener(snapshot: Snapshot) {
-//            with(binding) {
-//                btnDelete.setOnClickListener { deleteSnapshot(snapshot) }
-//
-//                cbLike.setOnCheckedChangeListener { _, checked ->
-//                    setLike(snapshot, checked)
-//                }
-//            }
+            //snapshot.id = 1.toString()
+            binding.btnDelete.setOnClickListener { deleteSnapshot(snapshot) }
+
+            binding.cbLike.setOnCheckedChangeListener { _, checked ->
+                    setLike(snapshot, checked)
+                }
+
         }
     }
 }
