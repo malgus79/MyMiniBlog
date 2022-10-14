@@ -9,6 +9,12 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
+import com.myminiblog.SnapshotsApplication.Companion.PATH_SNAPSHOTS
 import com.myminiblog.databinding.FragmentAddBinding
 
 class AddFragment : Fragment() {
@@ -17,6 +23,8 @@ class AddFragment : Fragment() {
     private val RC_GALLLERY = 1
     private lateinit var mBinding: FragmentAddBinding
     private var mPhotoSelectedUri: Uri? = null
+    private lateinit var mStorageReference: StorageReference
+    private lateinit var mDatabaseReference: DatabaseReference
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -32,6 +40,10 @@ class AddFragment : Fragment() {
         //configurar los botones
         mBinding.btnPost.setOnClickListener { postSnapshot() }
         mBinding.btnSelect.setOnClickListener { openGallery() }
+
+        //inicializar var de referencia
+        mStorageReference = FirebaseStorage.getInstance().reference
+        mDatabaseReference = FirebaseDatabase.getInstance().reference.child(PATH_SNAPSHOTS)
     }
 
     private fun openGallery() {
@@ -52,8 +64,35 @@ class AddFragment : Fragment() {
         }
     }
 
+    //subur imagen a storage
     private fun postSnapshot() {
-        TODO("Not yet implemented")
+        mBinding.progressBar.visibility = View.VISIBLE
+        //mStorageReference.child(PATH_SNAPSHOTS).child("my_photo")
+
+        val storageReference = mStorageReference.child(PATH_SNAPSHOTS).child("my_photo")
+
+        if (mPhotoSelectedUri!= null) {
+            storageReference.putFile(mPhotoSelectedUri!!)
+            //pintar el progres conforme se vaya subiendo la imagen
+            .addOnProgressListener{
+                val progress = (100 * it.bytesTransferred / it.totalByteCount).toInt()
+                mBinding.progressBar.progress = progress.toInt()
+                mBinding.tvMessage.text = "$progress"
+            }
+            .addOnCompleteListener {
+                mBinding.progressBar.visibility = View.INVISIBLE
+            }
+            .addOnSuccessListener {
+                Snackbar.make(mBinding.root, "Instantanea publicada", Snackbar.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener {
+                Snackbar.make(mBinding.root, "No se pudo subir, intente mas tarde", Snackbar.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    //guardar la url dentro de database
+    private fun saveSnapshot(key: String, url: String, title: String) {
     }
 
 
