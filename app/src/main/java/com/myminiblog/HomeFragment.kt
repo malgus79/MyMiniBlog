@@ -17,6 +17,7 @@ import com.firebase.ui.database.FirebaseRecyclerOptions
 import com.firebase.ui.database.SnapshotParser
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.core.SnapshotHolder
@@ -51,8 +52,6 @@ class HomeFragment : Fragment() {
                 snapshot!!.id = it.key!!
                 snapshot
             }).build()
-        //FirebaseRecyclerOptions.Builder<Snapshot>()
-        //.setQuery(query, Snapshot::class.java).build()
 
         mFirebaseAdapter = object : FirebaseRecyclerAdapter<Snapshot, SnapshotHolder>(options) {
             private lateinit var mContext: Context
@@ -128,7 +127,14 @@ class HomeFragment : Fragment() {
 
     //evento de likes
     private fun setLike(snapshot: Snapshot, checked: Boolean) {
-
+        val databaseReference = FirebaseDatabase.getInstance().reference.child("snapshots")
+        if (checked) {
+            databaseReference.child(snapshot.id).child("likeList")
+                .child(FirebaseAuth.getInstance().currentUser!!.uid).setValue(checked)
+        } else {
+            databaseReference.child(snapshot.id).child("likeList")
+                .child(FirebaseAuth.getInstance().currentUser!!.uid).setValue(null)
+        }
     }
 
 
