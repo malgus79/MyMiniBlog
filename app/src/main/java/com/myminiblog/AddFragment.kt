@@ -67,7 +67,7 @@ class AddFragment : Fragment() {
     //subur imagen a storage
     private fun postSnapshot() {
         mBinding.progressBar.visibility = View.VISIBLE
-        //mStorageReference.child(PATH_SNAPSHOTS).child("my_photo")
+        val key = mDatabaseReference.push().key!!
 
         val storageReference = mStorageReference.child(PATH_SNAPSHOTS).child("my_photo")
 
@@ -84,6 +84,12 @@ class AddFragment : Fragment() {
             }
             .addOnSuccessListener {
                 Snackbar.make(mBinding.root, "Instantanea publicada", Snackbar.LENGTH_SHORT).show()
+                it.storage.downloadUrl.addOnSuccessListener { downloadUri ->
+                    saveSnapshot(key, downloadUri.toString(), mBinding.etTitle.text.toString().trim())
+
+                    mBinding.tilTitle.visibility = View.GONE
+                    mBinding.tvMessage.text =getString(R.string.post_message_title)
+                }
             }
             .addOnFailureListener {
                 Snackbar.make(mBinding.root, "No se pudo subir, intente mas tarde", Snackbar.LENGTH_SHORT).show()
@@ -93,6 +99,22 @@ class AddFragment : Fragment() {
 
     //guardar la url dentro de database
     private fun saveSnapshot(key: String, url: String, title: String) {
+        val snapshot = Snapshot(title = title, photoUrl = url)
+        mDatabaseReference.child(key).setValue(snapshot)
+//            .addOnSuccessListener {
+//                hideKeyboard()
+//                mainAux?.showMessage(R.string.post_message_post_success)
+//
+//                with(mBinding) {
+//                    tilTitle.visibility = View.GONE
+//                    etTitle.setText("")
+//                    tilTitle.error = null
+//                    tvMessage.text = getString(R.string.post_message_title)
+//                    imgPhoto.setImageDrawable(null)
+//                }
+//            }
+//            .addOnCompleteListener { enableUI(true) }
+//            .addOnFailureListener { mainAux?.showMessage(R.string.post_message_post_snapshot_fail) }
     }
 
 
