@@ -26,7 +26,7 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        //
+        //mostrar nombre y email dle usuario en pantalla
         mBinding.tvName.text = FirebaseAuth.getInstance().currentUser?.displayName
         mBinding.tvEmail.text = FirebaseAuth.getInstance().currentUser?.email
 

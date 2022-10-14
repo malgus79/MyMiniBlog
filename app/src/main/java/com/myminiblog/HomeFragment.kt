@@ -72,6 +72,12 @@ class HomeFragment : Fragment() {
 
                     with(binding) {
                         tvTitle.text = snapshot.title
+                        cbLike.text =
+                            snapshot.likeList.keys.size.toString() //cuantos likes tiene la imagen
+                        FirebaseAuth.getInstance().currentUser?.let {
+                            cbLike.isChecked = snapshot.likeList  //si el usuario le dio like o no
+                                .containsKey(it.uid)
+                        }
 
                         Glide.with(mContext)
                             .load(snapshot.photoUrl)
