@@ -12,6 +12,7 @@
     <string name="post_message_title">Seleccione una imagen</string>
     <string name="post_message_valid_title">Por favor, añada un título</string>
 
+    <string name="profile_logout_success">Hasta pronto&#8230;</string>
     <string name="profile_button_logout">Cerrar sesión</string>
     <string name="description_item_delete">Botón para eliminar instantánea.</string>
 
