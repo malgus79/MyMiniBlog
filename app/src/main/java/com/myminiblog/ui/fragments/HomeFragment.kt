@@ -1,41 +1,43 @@
-package com.myminiblog
+package com.myminiblog.ui.fragments
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.firebase.ui.database.FirebaseRecyclerAdapter
 import com.firebase.ui.database.FirebaseRecyclerOptions
-import com.firebase.ui.database.SnapshotParser
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.core.SnapshotHolder
 import com.google.firebase.storage.FirebaseStorage
+import com.myminiblog.R
+import com.myminiblog.SnapshotsApplication
 import com.myminiblog.databinding.FragmentHomeBinding
 import com.myminiblog.databinding.ItemSnapshotBinding
+import com.myminiblog.entities.Snapshot
+import com.myminiblog.utils.FragmentAux
 
-class HomeFragment : Fragment(), HomeAux {
+class HomeFragment : Fragment(), FragmentAux {
 
     private lateinit var mBinding: FragmentHomeBinding
 
     private lateinit var mFirebaseAdapter: FirebaseRecyclerAdapter<Snapshot, SnapshotHolder>
     private lateinit var mLayoutManager: RecyclerView.LayoutManager
+    private lateinit var mSnapshotsRef: DatabaseReference
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View? {
+    ): View {
         mBinding = FragmentHomeBinding.inflate(inflater, container, false)
         return mBinding.root
     }
@@ -43,15 +45,26 @@ class HomeFragment : Fragment(), HomeAux {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val query = FirebaseDatabase.getInstance().reference.child("snapshots")
+        setupFirebase()
+        setupAdapter()
+        setupRecyclerView()
+    }
+
+    private fun setupFirebase() {
+        mSnapshotsRef =
+            FirebaseDatabase.getInstance().reference.child(SnapshotsApplication.PATH_SNAPSHOTS)
+    }
+
+    private fun setupAdapter() {
+
+        val query = mSnapshotsRef
 
         //identificador de cada imagen dependiendo de como se llama la rama
-        val options =
-            FirebaseRecyclerOptions.Builder<Snapshot>().setQuery(query, SnapshotParser {
-                val snapshot = it.getValue(Snapshot::class.java)
-                snapshot!!.id = it.key!!
-                snapshot
-            }).build()
+        val options = FirebaseRecyclerOptions.Builder<Snapshot>().setQuery(query) {
+            val snapshot = it.getValue(Snapshot::class.java)
+            snapshot!!.id = it.key!!
+            snapshot
+        }.build()
 
         mFirebaseAdapter = object : FirebaseRecyclerAdapter<Snapshot, SnapshotHolder>(options) {
             private lateinit var mContext: Context
@@ -72,12 +85,9 @@ class HomeFragment : Fragment(), HomeAux {
 
                     with(binding) {
                         tvTitle.text = snapshot.title
-                        cbLike.text =
-                            snapshot.likeList.keys.size.toString() //cuantos likes tiene la imagen
-                        FirebaseAuth.getInstance().currentUser?.let {
-                            cbLike.isChecked = snapshot.likeList  //si el usuario le dio like o no
-                                .containsKey(it.uid)
-                        }
+                        cbLike.text = snapshot.likeList.keys.size.toString()
+                        cbLike.isChecked = snapshot.likeList
+                            .containsKey(SnapshotsApplication.currentUser.uid)
 
                         Glide.with(mContext)
                             .load(snapshot.photoUrl)
@@ -99,12 +109,14 @@ class HomeFragment : Fragment(), HomeAux {
             //mostrar error
             override fun onError(error: DatabaseError) {
                 super.onError(error)
-                Toast.makeText(mContext, error.message, Toast.LENGTH_SHORT).show()
-                //Snackbar.make(mBinding.root, error.message, Snackbar.LENGTH_SHORT).show()
+                //Toast.makeText(mContext, error.message, Toast.LENGTH_SHORT).show()
+                Snackbar.make(mBinding.root, error.message, Snackbar.LENGTH_SHORT).show()
             }
         }
+    }
 
-        //configuracion del recyclerView
+    //configuracion del recyclerView
+    private fun setupRecyclerView() {
         mLayoutManager = LinearLayoutManager(context)
 
         mBinding.recyclerView.apply {
@@ -125,27 +137,52 @@ class HomeFragment : Fragment(), HomeAux {
         mFirebaseAdapter.stopListening()
     }
 
-    //refrescar el recyclerView a la primera posicion
-    override fun goToTop() {
-        mBinding.recyclerView.smoothScrollToPosition(0)
-    }
+//    //refrescar el recyclerView a la primera posicion
+//    override fun goToTop() {
+//        mBinding.recyclerView.smoothScrollToPosition(0)
+//    }
 
-    //eliminar imagen
+    //eliminar imagen (storage y database)
     private fun deleteSnapshot(snapshot: Snapshot) {
-        val databaseReference = FirebaseDatabase.getInstance().reference.child("snapshots")
-        databaseReference.child(snapshot.id).removeValue()
+        context?.let {
+            MaterialAlertDialogBuilder(it)
+                .setTitle(R.string.dialog_delete_title)
+                .setPositiveButton(R.string.dialog_delete_confirm) { _, _ ->
+                    val storageSnapshotsRef = FirebaseStorage.getInstance().reference
+                        .child(SnapshotsApplication.PATH_SNAPSHOTS)
+                        .child(SnapshotsApplication.currentUser.uid)
+                        .child(snapshot.id)
+                    storageSnapshotsRef.delete().addOnCompleteListener { result ->
+                        if (result.isSuccessful) {
+                            mSnapshotsRef.child(snapshot.id).removeValue()
+                        } else {
+                            Snackbar.make(mBinding.root,
+                                getString(R.string.home_delete_photo_error),
+                                Snackbar.LENGTH_LONG).show()
+                        }
+                    }
+                }
+                .setNegativeButton(R.string.dialog_delete_cancel, null)
+                .show()
+        }
     }
 
     //evento de likes
     private fun setLike(snapshot: Snapshot, checked: Boolean) {
-        val databaseReference = FirebaseDatabase.getInstance().reference.child("snapshots")
+        val myUserRef = mSnapshotsRef.child(snapshot.id)
+            .child(SnapshotsApplication.PROPERTY_LIKE_LIST)
+            .child(SnapshotsApplication.currentUser.uid)
+
         if (checked) {
-            databaseReference.child(snapshot.id).child("likeList")
-                .child(FirebaseAuth.getInstance().currentUser!!.uid).setValue(checked)
+            myUserRef.setValue(checked)
         } else {
-            databaseReference.child(snapshot.id).child("likeList")
-                .child(FirebaseAuth.getInstance().currentUser!!.uid).setValue(null)
+            myUserRef.setValue(null)
         }
+    }
+
+    //refrescar el recyclerView a la primera posicion
+    override fun refresh() {
+        mBinding.recyclerView.smoothScrollToPosition(0)
     }
 
 
@@ -154,11 +191,13 @@ class HomeFragment : Fragment(), HomeAux {
 
         //eventos de eliminar y like de cada imagen
         fun setListener(snapshot: Snapshot) {
-            binding.btnDelete.setOnClickListener { deleteSnapshot(snapshot) }
-            binding.cbLike.setOnCheckedChangeListener { _, checked ->
-                setLike(snapshot, checked)
-            }
+            with(binding) {
+                btnDelete.setOnClickListener { deleteSnapshot(snapshot) }
 
+                cbLike.setOnCheckedChangeListener { _, checked ->
+                    setLike(snapshot, checked)
+                }
+            }
         }
     }
 }
