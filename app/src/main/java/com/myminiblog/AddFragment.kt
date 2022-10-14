@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
@@ -26,6 +27,17 @@ class AddFragment : Fragment() {
     private var mPhotoSelectedUri: Uri? = null
     private lateinit var mStorageReference: StorageReference
     private lateinit var mDatabaseReference: DatabaseReference
+
+    private val galleryResult =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == Activity.RESULT_OK) {
+                mPhotoSelectedUri = it.data?.data
+
+                mBinding.imgPhoto.setImageURI(mPhotoSelectedUri)
+                mBinding.tilTitle.visibility = View.VISIBLE
+                mBinding.tvMessage.text = getString(R.string.post_message_valid_title)
+            }
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -49,20 +61,7 @@ class AddFragment : Fragment() {
 
     private fun openGallery() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        startActivityForResult(intent, RC_GALLLERY)
-    }
-
-    //recibir respuesta
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == RC_GALLLERY) {
-                mPhotoSelectedUri = data?.data
-                mBinding.imgPhoto.setImageURI(mPhotoSelectedUri)
-                mBinding.tilTitle.visibility = View.VISIBLE
-                mBinding.tvMessage.text = getString(R.string.post_message_valid_title)
-            }
-        }
+        galleryResult.launch(intent)
     }
 
     //subur imagen a storage
@@ -75,29 +74,34 @@ class AddFragment : Fragment() {
             .child(FirebaseAuth.getInstance().currentUser!!.uid)
             .child(key)
 
-        if (mPhotoSelectedUri!= null) {
+        if (mPhotoSelectedUri != null) {
             storageReference.putFile(mPhotoSelectedUri!!)
-            //pintar el progres conforme se vaya subiendo la imagen
-            .addOnProgressListener{
-                val progress = (100 * it.bytesTransferred / it.totalByteCount).toInt()
-                mBinding.progressBar.progress = progress.toInt()
-                mBinding.tvMessage.text = "$progress"
-            }
-            .addOnCompleteListener {
-                mBinding.progressBar.visibility = View.INVISIBLE
-            }
-            .addOnSuccessListener {
-                Snackbar.make(mBinding.root, "Instantanea publicada", Snackbar.LENGTH_SHORT).show()
-                it.storage.downloadUrl.addOnSuccessListener { downloadUri ->
-                    saveSnapshot(key, downloadUri.toString(), mBinding.etTitle.text.toString().trim())
-
-                    mBinding.tilTitle.visibility = View.GONE
-                    mBinding.tvMessage.text =getString(R.string.post_message_title)
+                //pintar el progres conforme se vaya subiendo la imagen
+                .addOnProgressListener {
+                    val progress = (100 * it.bytesTransferred / it.totalByteCount).toInt()
+                    mBinding.progressBar.progress = progress.toInt()
+                    mBinding.tvMessage.text = "$progress"
                 }
-            }
-            .addOnFailureListener {
-                Snackbar.make(mBinding.root, "No se pudo subir, intente mas tarde", Snackbar.LENGTH_SHORT).show()
-            }
+                .addOnCompleteListener {
+                    mBinding.progressBar.visibility = View.INVISIBLE
+                }
+                .addOnSuccessListener {
+                    Snackbar.make(mBinding.root, "Instantanea publicada", Snackbar.LENGTH_SHORT)
+                        .show()
+                    it.storage.downloadUrl.addOnSuccessListener { downloadUri ->
+                        saveSnapshot(key,
+                            downloadUri.toString(),
+                            mBinding.etTitle.text.toString().trim())
+
+                        mBinding.tilTitle.visibility = View.GONE
+                        mBinding.tvMessage.text = getString(R.string.post_message_title)
+                    }
+                }
+                .addOnFailureListener {
+                    Snackbar.make(mBinding.root,
+                        "No se pudo subir, intente mas tarde",
+                        Snackbar.LENGTH_SHORT).show()
+                }
         }
     }
 
