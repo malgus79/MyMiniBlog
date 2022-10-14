@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
@@ -69,7 +70,10 @@ class AddFragment : Fragment() {
         mBinding.progressBar.visibility = View.VISIBLE
         val key = mDatabaseReference.push().key!!
 
-        val storageReference = mStorageReference.child(PATH_SNAPSHOTS).child("my_photo")
+        //ruta donde se guardara en storaje
+        val storageReference = mStorageReference.child(PATH_SNAPSHOTS)
+            .child(FirebaseAuth.getInstance().currentUser!!.uid)
+            .child(key)
 
         if (mPhotoSelectedUri!= null) {
             storageReference.putFile(mPhotoSelectedUri!!)
