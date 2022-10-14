@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "151031117186",
+    "project_id": "myminiblog-be5aa",
+    "storage_bucket": "myminiblog-be5aa.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:151031117186:android:99fee869bfe3425fba0b9b",
+        "android_client_info": {
+          "package_name": "com.myminiblog"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "151031117186-kohrf5dgsr97kh3bbrtmcoolkurmoh80.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvcGWVCOpEk7bfdKmcG6nXh150FfTsXWQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "151031117186-kohrf5dgsr97kh3bbrtmcoolkurmoh80.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
