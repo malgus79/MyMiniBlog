@@ -25,7 +25,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.myminiblog.databinding.FragmentHomeBinding
 import com.myminiblog.databinding.ItemSnapshotBinding
 
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(), HomeAux {
 
     private lateinit var mBinding: FragmentHomeBinding
 
@@ -123,6 +123,11 @@ class HomeFragment : Fragment() {
     override fun onStop() {
         super.onStop()
         mFirebaseAdapter.stopListening()
+    }
+
+    //refrescar el recyclerView a la primera posicion
+    override fun goToTop() {
+        mBinding.recyclerView.smoothScrollToPosition(0)
     }
 
     //eliminar imagen

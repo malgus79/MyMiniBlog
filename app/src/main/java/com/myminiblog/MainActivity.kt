@@ -95,6 +95,12 @@ class MainActivity : AppCompatActivity() {
                 else -> false
             }
         }
+        //refrescar el recyclerView al click del home
+        mBinding.bottomNav.setOnItemReselectedListener {
+            when (it.itemId) {
+                R.id.action_home -> (homeFragment as HomeAux).goToTop()
+            }
+        }
     }
 
     //anadir el listener de auth con el ciclo de vida
