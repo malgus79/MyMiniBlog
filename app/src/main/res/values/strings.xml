@@ -10,6 +10,7 @@
     <string name="add_button_post">Publicar</string>
 
     <string name="post_message_title">Seleccione una imagen</string>
+    <string name="post_message_valid_title">Por favor, añada un título</string>
 
     <string name="description_item_delete">Botón para eliminar instantánea.</string>
 
