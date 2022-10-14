@@ -9,6 +9,8 @@
     <string name="add_hint_title">título de la instantánea</string>
     <string name="add_button_post">Publicar</string>
 
+    <string name="post_message_title">Seleccione una imagen</string>
+
     <string name="description_item_delete">Botón para eliminar instantánea.</string>
 
     <!-- TODO: Remove or change this placeholder text -->
